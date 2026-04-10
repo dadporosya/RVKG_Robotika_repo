@@ -1,3 +1,5 @@
+// #include "ButtonClass.ino"
+
 class Button {
   private:
     int PIN;
@@ -27,22 +29,6 @@ class Button {
 
     }
 
-    // void Init(
-    //     int pinIn,
-    //     setup()::<lambda()>,
-    //     setup()::<lambda()>,
-    //     setup()::<lambda()>,
-    //     setup()::<lambda()>
-    // ){
-    //   PIN = pinIn;
-
-    //   onLow = lowIn;
-    //   onEnteringLow = enterLowIn;
-
-    //   onUp = upIn;
-    //   onEnteringUp = enterUpIn;
-    // }
-
     void Update(){
       if (!IsPressed()) {
         if (!hold) {
@@ -71,30 +57,102 @@ class Button {
 };
 
 
+class Motor {
+  private:
+    int PIN;
+
+    int speed=0;
+
+    long startTime;
+    long currentTime;
+    const long DISABLED=-1;
+    
+
+  public:
+    long duration=DISABLED;
+
+    void Init(
+        int pinIn
+    ){
+      PIN = pinIn;
+    }
+
+    void Update(){
+      if (duration == DISABLED) return;
+
+      currentTime = millis();
+      if (currentTime-startTime>= duration){
+        EndMovement();
+      }
+    }
+
+    void Move(){
+      analogWrite(PIN, speed);
+    }
+
+    void SetSpeed(int value){
+      speed = value;
+      Move();
+    }
+
+    void ChangeSpeed(int value){
+      speed += value;
+      Move();
+    }
+
+    void StartMovement(int speedIn, float durationMiliIn=0, float durationSecIn=-1){
+      SetSpeed(speedIn);
+      startTime = millis();
+
+      duration = durationSecIn > 0 ? durationSecIn/1000 : durationMiliIn;
+    }
+
+    void EndMovement(){
+      duration=DISABLED;
+      SetSpeed(0);
+    }
+
+    bool isActive(){
+      return speed != 0;
+    }
+};
+
 
 /// ============================
 ///           SETUP
 ///          ↓↓↓↓↓↓↓
 int BTN1_PIN = 13;
 int MOTOR1_PIN = 3;
-
-void OnLowTemp(){
-  // Serial.println("Low");
-}
-
-void OnEnterLowTemp(){
-  analogWrite(MOTOR1_PIN, 255);
-}
-
-void OnUpTemp(){
-  // Serial.println("Up");
-}
-
-void OnEnterUpTemp(){
-  analogWrite(MOTOR1_PIN, 0);
-}
+int BEEP1_PIN = 9;
 
 Button btn1;
+Motor motor1;
+
+
+void OnLowTemp(){
+    // Serial.println("Low");
+  }
+
+  void OnEnterLowTemp(){
+    // motor1.SetSpeed(255);
+    if (motor1.isActive()){
+      motor1.EndMovement();
+      digitalWrite(BEEP1_PIN, HIGH);
+      return;
+    }
+
+    digitalWrite(BEEP1_PIN, LOW);
+    motor1.StartMovement(255, 1000);
+  }
+
+  void OnUpTemp(){
+    // Serial.println("Up");
+  }
+
+  void OnEnterUpTemp(){
+    // motor1.SetSpeed(0);
+  }
+
 
 void setup() {
   Serial.begin(9600);
@@ -109,33 +167,20 @@ void setup() {
     OnEnterUpTemp
   );
 
-  // btn1.Init(
-  //   BTN1_PIN,
-  //   [](){ Serial.println("Low"); },
-  //   [](){ analogWrite(MOTOR1_PIN, 255); },
-  //   [](){ Serial.println("Up"); },
-  //   [](){ analogWrite(MOTOR1_PIN, 0); }
-  // );
-
+  motor1.Init(MOTOR1_PIN);
 }
 ///           ↑↑↑↑↑↑↑
 ///            SETUP
 /// ============================
 
+
 /// ============================
 ///          MAIN LOOP
 ///          ↓↓↓↓↓↓↓↓
-
-
 void loop() {
-  
-  // if (digitalRead(BTN1_PIN) == LOW){
-  //   analogWrite(MOTOR1_PIN, 255);
-  // } else {
-  //   analogWrite(MOTOR1_PIN, 0);
-  // }
-
   btn1.Update();
+  motor1.Update();
+  
 }
 ///          ↑↑↑↑↑↑↑↑
 ///          MAIN LOOP
