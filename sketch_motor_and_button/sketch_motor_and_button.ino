@@ -118,26 +118,74 @@ class Motor {
 
 class Game {
   private:
-    int beepsBeforeStart;
+    float currentTime;
+
+    // Start beep settings
+    int preparationBeepPitch = 50;
+    int beepsBeforeStart=3;
     int currentBeepCount=0;
+    float beepDuration=5000;
+    float gapBetweenBeeps=7000;
+
+    long beepingStartTime;
+
+    int startBeepPitch = 200;
+
   public:
     String state = "not active"; // not active, preparation
     
-    void Init(){
-      
+    int BEEP_CENTRAL_PIN;
+
+    void Init(int BEEP_CENTRAL_PIN_IN){
+      BEEP_CENTRAL_PIN = BEEP_CENTRAL_PIN_IN;
     }
 
     void Update(){
+      currentTime = millis();
+
+      // switch(state){
+      //   case "preparation":
+      //     PreparationCoroutine();
+      //     break;
+      //   case "ready state":
+      //     digitalWrite(BEEP_CENTRAL_PIN, startBeepPitch);
+      //     break;
+      // }
+
+      if (state == "preparation"){
+        PreparationCoroutine();
+      } else if (state == "ready state"){
+        analogWrite(BEEP_CENTRAL_PIN, startBeepPitch);
+      }
 
     }
 
     void StartGame(){
       currentBeepCount=0;
-      state = "preparation";
+      analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
+      ChangeState("preparation");
     }
 
     void PreparationCoroutine(){
+        if (currentBeepCount >= beepsBeforeStart){
+          ChangeState("ready state");
+          return;
+        }
+        long dTime = currentTime - beepingStartTime;
 
+        if (dTime > beepDuration + gapBetweenBeeps){
+          beepingStartTime = 0;
+          analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
+          currentBeepCount++;
+        } else if (dTime > beepDuration){
+          analogWrite(BEEP_CENTRAL_PIN, 0);
+        }
+
+        
+    }
+
+    void ChangeState(String stateIn){
+      state = stateIn;
     }
 
 };
@@ -152,6 +200,8 @@ int BEEP1_PIN = 9;
 Button btn1;
 Motor motor1;
 
+Game game;
+
 
 void OnLowTemp(){
 
@@ -161,12 +211,14 @@ void OnEnterLowTemp(){
   // motor1.SetSpeed(255);
   if (motor1.isActive()){
     motor1.EndMovement();
-    analogWrite(BEEP1_PIN, 0);
+    // analogWrite(BEEP1_PIN, 0);
     return;
   }
 
-  analogWrite(BEEP1_PIN, 1);
+  // analogWrite(BEEP1_PIN, 1);
   motor1.StartMovement(255, 1000);
+
+  game.StartGame();
 }
 
 void OnUpTemp(){
@@ -176,10 +228,6 @@ void OnUpTemp(){
 void OnEnterUpTemp(){
   // motor1.SetSpeed(0);
 }
-
-
-
-     
 
    
 
@@ -200,6 +248,8 @@ void setup() {
   );
 
   motor1.Init(MOTOR1_PIN);
+
+  game.Init(BEEP1_PIN);
 }
 ///           ↑↑↑↑↑↑↑
 ///            SETUP
