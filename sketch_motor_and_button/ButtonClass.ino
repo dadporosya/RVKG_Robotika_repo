@@ -54,3 +54,6 @@
 //     }
 // };
 
+void test(){
+  Serial.println("tst");
+}

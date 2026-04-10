@@ -56,7 +56,6 @@ class Button {
     }
 };
 
-
 class Motor {
   private:
     int PIN;
@@ -117,6 +116,31 @@ class Motor {
     }
 };
 
+class Game {
+  private:
+    int beepsBeforeStart;
+    int currentBeepCount=0;
+  public:
+    String state = "not active"; // not active, preparation
+    
+    void Init(){
+      
+    }
+
+    void Update(){
+
+    }
+
+    void StartGame(){
+      currentBeepCount=0;
+      state = "preparation";
+    }
+
+    void PreparationCoroutine(){
+
+    }
+
+};
 
 /// ============================
 ///           SETUP
@@ -130,33 +154,41 @@ Motor motor1;
 
 
 void OnLowTemp(){
-    // Serial.println("Low");
+
+}
+
+void OnEnterLowTemp(){
+  // motor1.SetSpeed(255);
+  if (motor1.isActive()){
+    motor1.EndMovement();
+    analogWrite(BEEP1_PIN, 0);
+    return;
   }
 
-  void OnEnterLowTemp(){
-    // motor1.SetSpeed(255);
-    if (motor1.isActive()){
-      motor1.EndMovement();
-      digitalWrite(BEEP1_PIN, HIGH);
-      return;
-    }
+  analogWrite(BEEP1_PIN, 1);
+  motor1.StartMovement(255, 1000);
+}
 
-    digitalWrite(BEEP1_PIN, LOW);
-    motor1.StartMovement(255, 1000);
-  }
+void OnUpTemp(){
+  // Serial.println("Up");
+}
 
-  void OnUpTemp(){
-    // Serial.println("Up");
-  }
+void OnEnterUpTemp(){
+  // motor1.SetSpeed(0);
+}
 
-  void OnEnterUpTemp(){
-    // motor1.SetSpeed(0);
-  }
 
+
+     
+
+   
 
 void setup() {
+  test();
+
   Serial.begin(9600);
   pinMode(MOTOR1_PIN, 1); // motor 1
+  pinMode(BEEP1_PIN, OUTPUT);
   pinMode(BTN1_PIN, INPUT_PULLUP); // button 1
 
   btn1.Init(
@@ -177,10 +209,11 @@ void setup() {
 /// ============================
 ///          MAIN LOOP
 ///          ↓↓↓↓↓↓↓↓
+
 void loop() {
   btn1.Update();
-  motor1.Update();
-  
+  motor1.Update();  
+  test();                                                                                                                                          
 }
 ///          ↑↑↑↑↑↑↑↑
 ///          MAIN LOOP
