@@ -121,7 +121,7 @@ class Game {
     float currentTime;
 
     // Start beep settings
-    int preparationBeepPitch = 10;
+    int preparationBeepPitch = 3;
     int beepsBeforeStart=3;
     int currentBeepCount=0;
     float beepDuration=1000;
@@ -129,9 +129,9 @@ class Game {
 
     long beepingStartTime=0;
 
-    int readyStatePitch = 50;
+    int readyStatePitch = 70;
 
-    bool enableBeep=false;
+    bool enableBeep=true;
 
   public:
     String state = "not active"; // not active, preparation
@@ -174,7 +174,7 @@ class Game {
 
     void PreparationCoroutine(long dTime){
         if (currentBeepCount > beepsBeforeStart){
-          ChangeState("ready");
+          SetReady();
           return;
         }
         // long dTime = currentTime - beepingStartTime;
@@ -216,6 +216,7 @@ class Game {
     }
 
     void SetFinished(){
+      Beep(0);
       state = "finished";
     }
 
