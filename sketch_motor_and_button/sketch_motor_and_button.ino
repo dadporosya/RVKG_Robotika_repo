@@ -142,6 +142,7 @@ class Game {
 
     void Init(int BEEP_CENTRAL_PIN_IN){
       BEEP_CENTRAL_PIN = BEEP_CENTRAL_PIN_IN;
+      SetFinished();
     }
 
     void Update(){
@@ -211,7 +212,15 @@ class Game {
     }
 
     bool IsReady(){
-      return state == "ready"
+      return state == "ready";
+    }
+
+    void SetFinished(){
+      state = "finished";
+    }
+
+    bool IsFinished(){
+      return state == "finished";
     }
 
     void ChangeState(String stateIn){
@@ -226,7 +235,7 @@ class Game {
 };
 
 /// ============================
-///           SETUP
+///      VARIABLES AND ETC
 ///          ↓↓↓↓↓↓↓
 int START_GAME_BTN_PIN = 13;
 int PLAYER1_BTN_PIN = 12;
@@ -236,24 +245,20 @@ int MOTOR1_PIN = 3;
 int MOTOR2_PIN = 4;
 
 int BEEP1_PIN = 9;
-int PLAYER1_BTN_PIN = 9;
-int PLAYER2_BTN_PIN = 9;
 
-
-Button btn1;
+Button gameBtn;
 Motor motor1;
+
+Button player1Btn;
+Button player2Btn;
 
 Game game;
 
-void EmptyFunc(){
+void Empty(){
 
 }
 
-void OnLowTemp(){
-
-}
-
-void OnEnterLowTemp(){
+void OnEnterGameButton(){
   // // motor1.SetSpeed(255);
   // if (motor1.isActive()){
   //   motor1.EndMovement();
@@ -264,33 +269,73 @@ void OnEnterLowTemp(){
   // // analogWrite(BEEP1_PIN, 1);
   // motor1.StartMovement(255, 1000);
 
+  if (!game.IsFinished()) return;
+
   game.StartGame();
 }
 
-void OnUpTemp(){
-  // Serial.println("Up");
+void OnEnterPlayer(int playerBtnPin=-1){
+  if (playerBtnPin < 0) return;
+
+  if (game.IsReady()){
+    game.SetFinished();
+    Serial.println(playerBtnPin);
+    Serial.println("WINS!!!");
+  } else if (game.IsPreparation()){
+    game.SetFinished();
+    Serial.println(playerBtnPin);
+    Serial.println("LOSE!!!");
+  }
 }
 
-void OnEnterUpTemp(){
-  // motor1.SetSpeed(0);
+void OnEnterPlayer1(){
+  OnEnterPlayer(PLAYER1_BTN_PIN);
 }
 
-   
+void OnEnterPlayer2(){
+  OnEnterPlayer(PLAYER2_BTN_PIN);
+}
+///           ↑↑↑↑↑↑↑
+///      VARIABLES AND ETC
+/// ============================
 
+
+/// ============================
+///           SETUP
+///          ↓↓↓↓↓↓↓
 void setup() {
   test();
 
   Serial.begin(9600);
   pinMode(MOTOR1_PIN, 1); // motor 1
   pinMode(BEEP1_PIN, OUTPUT);
-  pinMode(START_GAME_PIN, INPUT_PULLUP); // button 1
 
-  btn1.Init(
-    START_GAME_PIN,
-    EmptyFunc,
-    OnEnterLowTemp,
-    EmptyFunc,
-    OnEnterUpTemp
+  pinMode(START_GAME_BTN_PIN, INPUT_PULLUP); // button 1
+  pinMode(PLAYER1_BTN_PIN, INPUT_PULLUP); // button 1
+  pinMode(PLAYER2_BTN_PIN, INPUT_PULLUP); // button 1
+
+  gameBtn.Init(
+    START_GAME_BTN_PIN,
+    Empty,
+    OnEnterGameButton,
+    Empty,
+    Empty
+  );
+
+  player1Btn.Init(
+    PLAYER1_BTN_PIN,
+    Empty,
+    OnEnterPlayer1,
+    Empty,
+    Empty
+  );
+
+  player2Btn.Init(
+    PLAYER2_BTN_PIN,
+    Empty,
+    OnEnterPlayer2,
+    Empty,
+    Empty
   );
 
   motor1.Init(MOTOR1_PIN);
@@ -307,7 +352,9 @@ void setup() {
 ///          ↓↓↓↓↓↓↓↓
 
 void loop() {
-  btn1.Update();
+  gameBtn.Update();
+  player1Btn.Update();
+  player2Btn.Update();
   motor1.Update();
   game.Update();  
 }
