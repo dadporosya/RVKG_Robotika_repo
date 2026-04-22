@@ -366,8 +366,8 @@ void setup() {
   game.Init(
     BEEP1_PIN,
     DIODE_RED,
-    DIODE_RED,
-    DIODE_RED
+    DIODE_YELLOW,
+    DIODE_GREEN
     );
 }
 ///           ↑↑↑↑↑↑↑
