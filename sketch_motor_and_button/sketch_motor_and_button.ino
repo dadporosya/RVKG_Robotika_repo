@@ -156,9 +156,9 @@ class Game {
       //     break;
       // }
       // Serial.println(state);
-      if (state == "preparation"){
+      if (IsPreparation()){
         PreparationCoroutine(currentTime - beepingStartTime);
-      } else if (state == "ready state"){
+      } else if (IsReady()){
         ReadyStateCoroutine();
         // analogWrite(BEEP_CENTRAL_PIN, startBeepPitch);
       }
@@ -168,31 +168,50 @@ class Game {
     void StartGame(){
       currentBeepCount=0;
       // analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
-      ChangeState("preparation");
+      SetPreparation();
     }
 
     void PreparationCoroutine(long dTime){
-        if (currentBeepCount >= beepsBeforeStart){
-          ChangeState("ready state");
+        if (currentBeepCount > beepsBeforeStart){
+          ChangeState("ready");
           return;
         }
         // long dTime = currentTime - beepingStartTime;
         Serial.println(dTime);
         if (dTime > beepDuration + gapBetweenBeeps){
+          currentBeepCount++;
+
           beepingStartTime = currentTime;
           if (enableBeep) Beep(preparationBeepPitch);
           Serial.println("----BEEP----");
           
+          
         } else if (dTime > beepDuration){
           Serial.println("----STOP---");
           if (enableBeep) Beep(0);
-          currentBeepCount++;
+          
         }
     }
 
     void ReadyStateCoroutine(){
       // Serial.println(state);
       if (enableBeep) Beep(readyStatePitch);
+    }
+
+    void SetPreparation(){
+      ChangeState("preparation");
+    }
+
+    bool IsPreparation(){
+      return state == "preparation";
+    }
+
+    void SetReady(){
+      ChangeState("ready");
+    }
+
+    bool IsReady(){
+      return state == "ready"
     }
 
     void ChangeState(String stateIn){
@@ -209,30 +228,41 @@ class Game {
 /// ============================
 ///           SETUP
 ///          ↓↓↓↓↓↓↓
-int BTN1_PIN = 13;
+int START_GAME_BTN_PIN = 13;
+int PLAYER1_BTN_PIN = 12;
+int PLAYER2_BTN_PIN = 11;
+
 int MOTOR1_PIN = 3;
+int MOTOR2_PIN = 4;
+
 int BEEP1_PIN = 9;
+int PLAYER1_BTN_PIN = 9;
+int PLAYER2_BTN_PIN = 9;
+
 
 Button btn1;
 Motor motor1;
 
 Game game;
 
+void EmptyFunc(){
+
+}
 
 void OnLowTemp(){
 
 }
 
 void OnEnterLowTemp(){
-  // motor1.SetSpeed(255);
-  if (motor1.isActive()){
-    motor1.EndMovement();
-    // analogWrite(BEEP1_PIN, 0);
-    return;
-  }
+  // // motor1.SetSpeed(255);
+  // if (motor1.isActive()){
+  //   motor1.EndMovement();
+  //   // analogWrite(BEEP1_PIN, 0);
+  //   return;
+  // }
 
-  // analogWrite(BEEP1_PIN, 1);
-  motor1.StartMovement(255, 1000);
+  // // analogWrite(BEEP1_PIN, 1);
+  // motor1.StartMovement(255, 1000);
 
   game.StartGame();
 }
@@ -253,13 +283,13 @@ void setup() {
   Serial.begin(9600);
   pinMode(MOTOR1_PIN, 1); // motor 1
   pinMode(BEEP1_PIN, OUTPUT);
-  pinMode(BTN1_PIN, INPUT_PULLUP); // button 1
+  pinMode(START_GAME_PIN, INPUT_PULLUP); // button 1
 
   btn1.Init(
-    BTN1_PIN,
-    OnLowTemp,
+    START_GAME_PIN,
+    EmptyFunc,
     OnEnterLowTemp,
-    OnUpTemp,
+    EmptyFunc,
     OnEnterUpTemp
   );
 
