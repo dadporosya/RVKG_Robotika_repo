@@ -133,6 +133,10 @@ class Game {
 
     bool enableBeep=true;
 
+    int DIODE_RED;
+    int DIODE_YELLOW;
+    int DIODE_GREEN;
+
   public:
     String state = "not active"; // not active, preparation
     
@@ -140,8 +144,16 @@ class Game {
 
 
 
-    void Init(int BEEP_CENTRAL_PIN_IN){
+    void Init(
+      int BEEP_CENTRAL_PIN_IN,
+      int DIODE_RED_IN,
+      int DIODE_YELLOW_IN,
+      int DIODE_GREEN_IN
+    ){
       BEEP_CENTRAL_PIN = BEEP_CENTRAL_PIN_IN;
+      int DIODE_RED = DIODE_RED_IN;
+      int DIODE_YELLOW = DIODE_YELLOW_IN;
+      int DIODE_GREEN = DIODE_GREEN_IN;
       SetFinished();
     }
 
@@ -167,7 +179,7 @@ class Game {
     }
 
     void StartGame(){
-      currentBeepCount=0;
+      
       // analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
       SetPreparation();
     }
@@ -200,6 +212,8 @@ class Game {
     }
 
     void SetPreparation(){
+      currentBeepCount=0;
+      digitalWrite(DIODE_RED, 1);
       ChangeState("preparation");
     }
 
@@ -246,6 +260,10 @@ int MOTOR1_PIN = 3;
 int MOTOR2_PIN = 4;
 
 int BEEP1_PIN = 9;
+
+int DIODE_RED = 7;
+int DIODE_YELLOW = 6;
+int DIODE_GREEN = 5;
 
 Button gameBtn;
 Motor motor1;
@@ -311,6 +329,10 @@ void setup() {
   pinMode(MOTOR1_PIN, 1); // motor 1
   pinMode(BEEP1_PIN, OUTPUT);
 
+  pinMode(DIODE_RED, OUTPUT);
+  pinMode(DIODE_YELLOW, OUTPUT);
+  pinMode(DIODE_GREEN, OUTPUT);
+
   pinMode(START_GAME_BTN_PIN, INPUT_PULLUP); // button 1
   pinMode(PLAYER1_BTN_PIN, INPUT_PULLUP); // button 1
   pinMode(PLAYER2_BTN_PIN, INPUT_PULLUP); // button 1
@@ -341,7 +363,12 @@ void setup() {
 
   motor1.Init(MOTOR1_PIN);
 
-  game.Init(BEEP1_PIN);
+  game.Init(
+    BEEP1_PIN,
+    DIODE_RED,
+    DIODE_RED,
+    DIODE_RED
+    );
 }
 ///           ↑↑↑↑↑↑↑
 ///            SETUP
