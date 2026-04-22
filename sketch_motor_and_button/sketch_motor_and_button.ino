@@ -121,20 +121,24 @@ class Game {
     float currentTime;
 
     // Start beep settings
-    int preparationBeepPitch = 50;
+    int preparationBeepPitch = 10;
     int beepsBeforeStart=3;
     int currentBeepCount=0;
-    float beepDuration=5000;
-    float gapBetweenBeeps=7000;
+    float beepDuration=1000;
+    float gapBetweenBeeps=1000;
 
-    long beepingStartTime;
+    long beepingStartTime=0;
 
-    int startBeepPitch = 200;
+    int readyStatePitch = 50;
+
+    bool enableBeep=false;
 
   public:
     String state = "not active"; // not active, preparation
     
     int BEEP_CENTRAL_PIN;
+
+
 
     void Init(int BEEP_CENTRAL_PIN_IN){
       BEEP_CENTRAL_PIN = BEEP_CENTRAL_PIN_IN;
@@ -151,41 +155,53 @@ class Game {
       //     digitalWrite(BEEP_CENTRAL_PIN, startBeepPitch);
       //     break;
       // }
-
+      // Serial.println(state);
       if (state == "preparation"){
-        PreparationCoroutine();
+        PreparationCoroutine(currentTime - beepingStartTime);
       } else if (state == "ready state"){
-        analogWrite(BEEP_CENTRAL_PIN, startBeepPitch);
+        ReadyStateCoroutine();
+        // analogWrite(BEEP_CENTRAL_PIN, startBeepPitch);
       }
 
     }
 
     void StartGame(){
       currentBeepCount=0;
-      analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
+      // analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
       ChangeState("preparation");
     }
 
-    void PreparationCoroutine(){
+    void PreparationCoroutine(long dTime){
         if (currentBeepCount >= beepsBeforeStart){
           ChangeState("ready state");
           return;
         }
-        long dTime = currentTime - beepingStartTime;
-
+        // long dTime = currentTime - beepingStartTime;
+        Serial.println(dTime);
         if (dTime > beepDuration + gapBetweenBeeps){
-          beepingStartTime = 0;
-          analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
-          currentBeepCount++;
+          beepingStartTime = currentTime;
+          if (enableBeep) Beep(preparationBeepPitch);
+          Serial.println("----BEEP----");
+          
         } else if (dTime > beepDuration){
-          analogWrite(BEEP_CENTRAL_PIN, 0);
+          Serial.println("----STOP---");
+          if (enableBeep) Beep(0);
+          currentBeepCount++;
         }
+    }
 
-        
+    void ReadyStateCoroutine(){
+      // Serial.println(state);
+      if (enableBeep) Beep(readyStatePitch);
     }
 
     void ChangeState(String stateIn){
       state = stateIn;
+      Serial.println(state);
+    }
+
+    void Beep(int pitch=0){
+      analogWrite(BEEP_CENTRAL_PIN, pitch);
     }
 
 };
@@ -262,8 +278,8 @@ void setup() {
 
 void loop() {
   btn1.Update();
-  motor1.Update();  
-  test();                                                                                                                                          
+  motor1.Update();
+  game.Update();  
 }
 ///          ↑↑↑↑↑↑↑↑
 ///          MAIN LOOP
