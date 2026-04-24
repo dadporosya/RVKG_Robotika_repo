@@ -212,7 +212,7 @@ class Game {
 
     int readyStatePitch = 70;
 
-    bool enableBeep=false; // ENABLE BEEP
+    bool enableBeep = true; // ENABLE BEEP
 
     Diode DIODE_RED;
     Diode DIODE_YELLOW;
@@ -398,17 +398,46 @@ void OnEnterGameButton(){
 
   if (!game.IsFinished()) return;
 
+  ResetAllPlayers();
   game.StartGame();
 }
 
-void OnEnterPlayer(int playerBtnPin=-1, Diode diodeWin, Diode diodeLose){
+void OnEnterPlayer(
+  int playerBtnPin, Diode playerDiodeWin, Diode playerDiodeLose,
+  int opponentBtnPin, Diode opponentDiodeWin, Diode opponentDiodeLose
+  ){
   if (playerBtnPin < 0) return;
+  if (game.IsFinished()) return;
+
+  ResetAllPlayers();
 
   if (game.IsReady()){
-    PlayerLoose(playerBtnPin, diodeWin);
+    PlayerWin(playerBtnPin, playerDiodeWin);
+    PlayerLose(opponentBtnPin, opponentDiodeLose);
+    
   } else if (game.IsPreparation()){
-    PlayerWin(playerBtnPin, diodeLose);
+    PlayerLose(playerBtnPin, playerDiodeLose);
+    PlayerWin(opponentBtnPin, opponentDiodeWin);
+
   }
+}
+
+void ResetPlayer(Diode diodeWin, Diode diodeLose){
+  diodeWin.TurnOff();
+  diodeLose.TurnOff();
+}
+
+void ResetAllPlayers(){
+  ResetPlayer1();
+  ResetPlayer2();
+}
+
+void ResetPlayer1(){
+  ResetPlayer(P1_GREEN,  P1_RED);
+}
+
+void ResetPlayer2(){
+  ResetPlayer(P2_GREEN,  P2_RED);
 }
 
 void PlayerWin(
@@ -421,7 +450,7 @@ void PlayerWin(
   diode.TurnOn();
 }
 
-void PlayerLoose(
+void PlayerLose(
   int PLAYER_PIN,
   Diode diode
   ){
@@ -432,14 +461,14 @@ void PlayerLoose(
 }
 
 void OnEnterPlayer1(){
-  OnEnterPlayer(PLAYER1_BTN_PIN, P1_GREEN,  P1_RED);
+  OnEnterPlayer(PLAYER1_BTN_PIN, P1_GREEN,  P1_RED, PLAYER2_BTN_PIN, P2_GREEN,  P2_RED);
 }
 
 void OnEnterPlayer2(){
-  OnEnterPlayer(PLAYER2_BTN_PIN, P2_GREEN,  P2_RED);
+  OnEnterPlayer(PLAYER2_BTN_PIN, P2_GREEN,  P2_RED, PLAYER1_BTN_PIN, P1_GREEN,  P1_RED);
 }
 ///           ↑↑↑↑↑↑↑
-///      VARIABLES AND ETC
+///    VARIABLES, LAMBDAS, ETC
 /// ============================
 
 
