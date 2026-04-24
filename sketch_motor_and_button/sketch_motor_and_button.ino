@@ -64,7 +64,7 @@ class Motor {
     int speed=0;
 
     int defaultSpeed = 200;
-    float DEG_CONST= 90 / 200; // CONST. 200 * 200 ~= 90 deg.  t = s / v. t = 90 / 200
+    float DEG_CONST= (200 * 200) / 90; // CONST. 200 * 200 ~= 90 deg.  t = s / v. t = 90 / 200; 1 deg ~= 200 * 200 / 90; m // TODO
 
     long startTime;
     long currentTime;
@@ -109,6 +109,10 @@ class Motor {
       startTime = millis();
 
       duration = durationSecIn > 0 ? durationSecIn/1000 : durationMiliIn;
+    }
+
+    void MoveDegrees(float degrees){
+      StartMovement(defaultSpeed, durationSecIn:);
     }
 
     void EndMovement(){
