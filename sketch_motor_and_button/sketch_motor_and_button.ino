@@ -269,12 +269,14 @@ class Game {
 
         beepingStartTime = currentTime;
         if (enableBeep) Beep(preparationBeepPitch+currentBeepCount);
+        DIODE_YELLOW.TurnOn();
         Serial.println("----BEEP----");
         
         
       } else if (dTime > currentBeepDuration){
         Serial.println("----STOP---");
         if (enableBeep) Beep(0);
+        DIODE_YELLOW.TurnOff();
       }
     }
 
@@ -303,7 +305,9 @@ class Game {
 
       if (enableBeep) Beep(readyStatePitch);
 
-      DIODE_RED.TurnOn();
+      DIODE_RED.TurnOff();
+      DIODE_YELLOW.TurnOff();
+      DIODE_GREEN.TurnOn();
       
     }
 
@@ -314,6 +318,9 @@ class Game {
     void SetFinished(){
       Beep(0);
       DIODE_RED.TurnOff();
+      DIODE_YELLOW.TurnOff();
+      DIODE_GREEN.TurnOff();
+
       state = "finished";
     }
 
@@ -336,23 +343,35 @@ class Game {
 ///      VARIABLES AND ETC
 ///          ↓↓↓↓↓↓↓
 int START_GAME_BTN_PIN = 13;
+
 int PLAYER1_BTN_PIN = 12;
+int P1_DIODE_RED = 6;
+int P1_DIODE_GREEN = 5;
+
 int PLAYER2_BTN_PIN = 11;
+int P2_DIODE_RED = 8;
+int P2_DIODE_GREEN = 7;
 
-int MOTOR1_PIN = 3;
-int MOTOR2_PIN = 4;
 
-int CENTRAL_BEEP_PIN = 9;
+// int MOTOR1_PIN = 2;
+// int MOTOR2_PIN = 3;
 
-int DIODE_RED_PIN = 7;
-int DIODE_YELLOW_PIN = 6;
-int DIODE_GREEN_PIN = 5;
+int CENTRAL_BEEP_PIN = 10;
+
+int DIODE_RED_PIN = 4;
+int DIODE_YELLOW_PIN = 3;
+int DIODE_GREEN_PIN = 2;
 
 Button gameBtn;
 Motor motor1;
 
 Button player1Btn;
+Diode P1_RED;
+Diode P1_GREEN;
+
 Button player2Btn;
+Diode P2_RED;
+Diode P2_GREEN;
 
 Diode DIODE_RED;
 Diode DIODE_YELLOW;
@@ -382,34 +401,42 @@ void OnEnterGameButton(){
   game.StartGame();
 }
 
-void OnEnterPlayer(int playerBtnPin=-1){
+void OnEnterPlayer(int playerBtnPin=-1, Diode diodeWin, Diode diodeLose){
   if (playerBtnPin < 0) return;
 
   if (game.IsReady()){
-    PlayerLoose(playerBtnPin);
+    PlayerLoose(playerBtnPin, diodeWin);
   } else if (game.IsPreparation()){
-    PlayerWin(playerBtnPin);
+    PlayerWin(playerBtnPin, diodeLose);
   }
 }
 
-void PlayerWin(int PLAYER_PIN){
+void PlayerWin(
+  int PLAYER_PIN,
+  Diode diode
+  ){
   game.SetFinished();
   Serial.println(PLAYER_PIN);
   Serial.println("LOSE!!!");
+  diode.TurnOn();
 }
 
-void PlayerLoose(int PLAYER_PIN){
+void PlayerLoose(
+  int PLAYER_PIN,
+  Diode diode
+  ){
   game.SetFinished();
   Serial.println(PLAYER_PIN);
   Serial.println("WINS!!!");
+  diode.TurnOn();
 }
 
 void OnEnterPlayer1(){
-  OnEnterPlayer(PLAYER1_BTN_PIN);
+  OnEnterPlayer(PLAYER1_BTN_PIN, P1_GREEN,  P1_RED);
 }
 
 void OnEnterPlayer2(){
-  OnEnterPlayer(PLAYER2_BTN_PIN);
+  OnEnterPlayer(PLAYER2_BTN_PIN, P2_GREEN,  P2_RED);
 }
 ///           ↑↑↑↑↑↑↑
 ///      VARIABLES AND ETC
@@ -438,6 +465,8 @@ void setup() {
     Empty,
     Empty
   );
+  P1_RED.Init(P1_DIODE_RED);
+  P1_GREEN.Init(P1_DIODE_GREEN);
 
   player2Btn.Init(
     PLAYER2_BTN_PIN,
@@ -446,8 +475,10 @@ void setup() {
     Empty,
     Empty
   );
+  P2_RED.Init(P2_DIODE_RED);
+  P2_GREEN.Init(P2_DIODE_GREEN);
 
-  motor1.Init(MOTOR1_PIN);
+  // motor1.Init(MOTOR1_PIN);
 
   DIODE_RED.Init(DIODE_RED_PIN);
   DIODE_YELLOW.Init(DIODE_YELLOW_PIN);
