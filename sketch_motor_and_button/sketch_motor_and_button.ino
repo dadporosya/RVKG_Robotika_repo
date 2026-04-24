@@ -20,6 +20,7 @@ class Button {
         void (*enterUpIn)(void*)
     ){
       PIN = pinIn;
+      pinMode(PIN, INPUT_PULLUP);
 
       onLow = lowIn;
       onEnteringLow = enterLowIn;
@@ -74,6 +75,7 @@ class Motor {
         int pinIn
     ){
       PIN = pinIn;
+      pinMode(PIN, 1);
     }
 
     void Update(){
@@ -116,6 +118,76 @@ class Motor {
     }
 };
 
+class Diode{
+  private:
+    int PIN;
+    int currentValue=0;
+  public:
+    void Init(int PIN_IN){
+      PIN = PIN_IN;
+      pinMode(PIN, OUTPUT);
+    }
+
+    void TurnOn(){
+      digitalWrite(PIN, 1);
+    }
+
+    void TunOff(){
+      digitalWrite(PIN, 0);
+    }
+
+    void ChangeState(){
+      digitalWrite(PIN, !digitalRead(PIN));
+    }
+    
+    void Set(int value){
+      currentValue = value;
+      analogWrite(PIN, currentValue);
+    }
+
+    void Change(int value){
+      currentValue += value;
+      if (currentValue > 255) currentValue = 255;
+      else if (currentValue < 0) currentValue = 0;
+      analogWrite(PIN, currentValue);
+    }
+};
+
+class Beep{
+  private:
+    int PIN;
+    int currentValue=0;
+  public:
+    void Init(int PIN_IN){
+      PIN = PIN_IN;
+      pinMode(PIN, OUTPUT);
+    }
+
+    void TurnOn(){
+      digitalWrite(PIN, 1);
+    }
+
+    void TunOff(){
+      digitalWrite(PIN, 0);
+    }
+
+    void ChangeState(){
+      digitalWrite(PIN, !digitalRead(PIN));
+    }
+    
+    void Set(int value){
+      currentValue = value;
+      analogWrite(PIN, currentValue);
+    }
+
+    void Change(int value){
+      currentValue += value;
+      if (currentValue > 255) currentValue = 255;
+      else if (currentValue < 0) currentValue = 0;
+      analogWrite(PIN, currentValue);
+    }
+};
+
 class Game {
   private:
     float currentTime;
@@ -131,7 +203,7 @@ class Game {
 
     int readyStatePitch = 70;
 
-    bool enableBeep=true;
+    bool enableBeep=true; // ENABLE BEEP
 
     int DIODE_RED;
     int DIODE_YELLOW;
@@ -160,20 +232,10 @@ class Game {
     void Update(){
       currentTime = millis();
 
-      // switch(state){
-      //   case "preparation":
-      //     PreparationCoroutine();
-      //     break;
-      //   case "ready state":
-      //     digitalWrite(BEEP_CENTRAL_PIN, startBeepPitch);
-      //     break;
-      // }
-      // Serial.println(state);
       if (IsPreparation()){
         PreparationCoroutine(currentTime - beepingStartTime);
       } else if (IsReady()){
         ReadyStateCoroutine();
-        // analogWrite(BEEP_CENTRAL_PIN, startBeepPitch);
       }
 
     }
@@ -185,36 +247,40 @@ class Game {
     }
 
     void PreparationCoroutine(long dTime){
-        if (currentBeepCount > beepsBeforeStart){
-          SetReady();
-          return;
-        }
-        // long dTime = currentTime - beepingStartTime;
-        Serial.println(dTime);
-        if (dTime > beepDuration + gapBetweenBeeps){
-          currentBeepCount++;
+      if (dTime < 0) dTime = currentTime;
 
-          beepingStartTime = currentTime;
-          if (enableBeep) Beep(preparationBeepPitch);
-          Serial.println("----BEEP----");
-          
-          
-        } else if (dTime > beepDuration){
-          Serial.println("----STOP---");
-          if (enableBeep) Beep(0);
-          
-        }
+      if (currentBeepCount > beepsBeforeStart){
+        SetReady();
+        return;
+      }
+      // long dTime = currentTime - beepingStartTime;
+      Serial.println(dTime);
+      if (dTime > beepDuration + gapBetweenBeeps){
+        currentBeepCount++;
+
+        beepingStartTime = currentTime;
+        if (enableBeep) Beep(preparationBeepPitch);
+        Serial.println("----BEEP----");
+        
+        
+      } else if (dTime > beepDuration){
+        Serial.println("----STOP---");
+        if (enableBeep) Beep(0);
+      }
     }
 
-    void ReadyStateCoroutine(){
+    void ReadyStateCoroutine(long dTime=-1){
       // Serial.println(state);
-      if (enableBeep) Beep(readyStatePitch);
+      if (dTime < 0) dTime = currentTime;
     }
 
     void SetPreparation(){
-      currentBeepCount=0;
-      digitalWrite(DIODE_RED, 1);
       ChangeState("preparation");
+
+      currentBeepCount=0;
+      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
+      Serial.println(!digitalRead(DIODE_RED));
+      
     }
 
     bool IsPreparation(){
@@ -223,6 +289,12 @@ class Game {
 
     void SetReady(){
       ChangeState("ready");
+
+      if (enableBeep) Beep(readyStatePitch);
+
+      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
+      Serial.println(digitalRead(DIODE_RED));
+      
     }
 
     bool IsReady(){
@@ -231,6 +303,7 @@ class Game {
 
     void SetFinished(){
       Beep(0);
+      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
       state = "finished";
     }
 
@@ -297,14 +370,22 @@ void OnEnterPlayer(int playerBtnPin=-1){
   if (playerBtnPin < 0) return;
 
   if (game.IsReady()){
-    game.SetFinished();
-    Serial.println(playerBtnPin);
-    Serial.println("WINS!!!");
+    PlayerLoose(playerBtnPin);
   } else if (game.IsPreparation()){
-    game.SetFinished();
-    Serial.println(playerBtnPin);
-    Serial.println("LOSE!!!");
+    PlayerWin(playerBtnPin);
   }
+}
+
+void PlayerWin(int PLAYER_PIN){
+  game.SetFinished();
+  Serial.println(PLAYER_PIN);
+  Serial.println("LOSE!!!");
+}
+
+void PlayerLoose(int PLAYER_PIN){
+  game.SetFinished();
+  Serial.println(PLAYER_PIN);
+  Serial.println("WINS!!!");
 }
 
 void OnEnterPlayer1(){
@@ -326,17 +407,20 @@ void setup() {
   test();
 
   Serial.begin(9600);
-  pinMode(MOTOR1_PIN, 1); // motor 1
-  pinMode(BEEP1_PIN, OUTPUT);
+  // pinMode(MOTOR1_PIN, 1); // motor 1
+  // pinMode(BEEP1_PIN, OUTPUT);
 
-  pinMode(DIODE_RED, OUTPUT);
-  pinMode(DIODE_YELLOW, OUTPUT);
-  pinMode(DIODE_GREEN, OUTPUT);
+  //DIODES
+  // pinMode(DIODE_RED, OUTPUT);
+  // pinMode(DIODE_YELLOW, OUTPUT);
+  // pinMode(DIODE_GREEN, OUTPUT);
 
-  pinMode(START_GAME_BTN_PIN, INPUT_PULLUP); // button 1
-  pinMode(PLAYER1_BTN_PIN, INPUT_PULLUP); // button 1
-  pinMode(PLAYER2_BTN_PIN, INPUT_PULLUP); // button 1
+  //BUTTONS
+  // pinMode(START_GAME_BTN_PIN, INPUT_PULLUP); // button 1
+  // pinMode(PLAYER1_BTN_PIN, INPUT_PULLUP); // button 1
+  // pinMode(PLAYER2_BTN_PIN, INPUT_PULLUP); // button 1
 
+  //INITS
   gameBtn.Init(
     START_GAME_BTN_PIN,
     Empty,
@@ -385,6 +469,10 @@ void loop() {
   player2Btn.Update();
   motor1.Update();
   game.Update();  
+
+  digitalWrite(DIODE_RED, HIGH);
+  Serial.println(digitalRead(DIODE_RED));
+  // Serial.println(DIODE_RED);
 }
 ///          ↑↑↑↑↑↑↑↑
 ///          MAIN LOOP
