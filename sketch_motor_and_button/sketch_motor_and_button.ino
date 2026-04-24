@@ -63,6 +63,9 @@ class Motor {
 
     int speed=0;
 
+    int defaultSpeed = 200;
+    float DEG_CONST= 90 / 200; // CONST. 200 * 200 ~= 90 deg.  t = s / v. t = 90 / 200
+
     long startTime;
     long currentTime;
     const long DISABLED=-1;
@@ -353,7 +356,7 @@ int P2_DIODE_RED = 8;
 int P2_DIODE_GREEN = 7;
 
 
-// int MOTOR1_PIN = 2;
+int MOTOR_PIN = 9;
 // int MOTOR2_PIN = 3;
 
 int CENTRAL_BEEP_PIN = 10;
@@ -363,7 +366,9 @@ int DIODE_YELLOW_PIN = 3;
 int DIODE_GREEN_PIN = 2;
 
 Button gameBtn;
-Motor motor1;
+
+// motor.StartMovement(201, 200); ~= 90 deg
+Motor motor;
 
 Button player1Btn;
 Diode P1_RED;
@@ -387,14 +392,14 @@ void Empty(){
 
 void OnEnterGameButton(){
   // motor1.SetSpeed(255);
-  if (motor1.isActive()){
-    motor1.EndMovement();
+  if (motor.isActive()){
+    motor.EndMovement();
     // analogWrite(BEEP1_PIN, 0);
     return;
   }
 
   // analogWrite(BEEP1_PIN, 1);
-  motor1.StartMovement(255, 1000);
+  motor.StartMovement(201, 200);
 
   if (!game.IsFinished()) return;
 
@@ -507,7 +512,7 @@ void setup() {
   P2_RED.Init(P2_DIODE_RED);
   P2_GREEN.Init(P2_DIODE_GREEN);
 
-  // motor1.Init(MOTOR1_PIN);
+  motor.Init(MOTOR_PIN);
 
   DIODE_RED.Init(DIODE_RED_PIN);
   DIODE_YELLOW.Init(DIODE_YELLOW_PIN);
@@ -535,7 +540,7 @@ void loop() {
   gameBtn.Update();
   player1Btn.Update();
   player2Btn.Update();
-  motor1.Update();
+  motor.Update();
   game.Update();  
 
   // digitalWrite(DIODE_RED, HIGH);
