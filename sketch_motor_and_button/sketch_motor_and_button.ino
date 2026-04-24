@@ -129,6 +129,7 @@ class Diode{
     }
 
     void TurnOn(){
+      Serial.println("TURN ON " + String(PIN));
       digitalWrite(PIN, 1);
     }
 
@@ -211,7 +212,7 @@ class Game {
 
     int readyStatePitch = 70;
 
-    bool enableBeep=true; // ENABLE BEEP
+    bool enableBeep=false; // ENABLE BEEP
 
     Diode DIODE_RED;
     Diode DIODE_YELLOW;
@@ -237,6 +238,8 @@ class Game {
 
     void Update(){
       currentTime = millis();
+
+      // DIODE_RED.TurnOn();
 
       if (IsPreparation()){
         PreparationCoroutine(currentTime - beepingStartTime);
