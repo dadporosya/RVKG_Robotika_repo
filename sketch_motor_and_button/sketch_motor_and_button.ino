@@ -132,7 +132,7 @@ class Diode{
       digitalWrite(PIN, 1);
     }
 
-    void TunOff(){
+    void TurnOff(){
       digitalWrite(PIN, 0);
     }
 
@@ -167,7 +167,7 @@ class Beep{
       digitalWrite(PIN, 1);
     }
 
-    void TunOff(){
+    void TurnOff(){
       digitalWrite(PIN, 0);
     }
 
@@ -186,6 +186,10 @@ class Beep{
       else if (currentValue < 0) currentValue = 0;
       analogWrite(PIN, currentValue);
     }
+
+    void GetValue(){
+      // Serial.println("analog: ", analogRead);
+    }
 };
 
 class Game {
@@ -194,10 +198,14 @@ class Game {
 
     // Start beep settings
     int preparationBeepPitch = 3;
+
     int beepsBeforeStart=3;
     int currentBeepCount=0;
-    float beepDuration=1000;
-    float gapBetweenBeeps=1000;
+    int maxBeepCount=5;
+
+    float defaultBeepDuration=1000;
+    float beepDurationDistribution=250;
+    float currentBeepDuration=1000;
 
     long beepingStartTime=0;
 
@@ -205,27 +213,25 @@ class Game {
 
     bool enableBeep=true; // ENABLE BEEP
 
-    int DIODE_RED;
-    int DIODE_YELLOW;
-    int DIODE_GREEN;
+    Diode DIODE_RED;
+    Diode DIODE_YELLOW;
+    Diode DIODE_GREEN;
+
+    Beep beep;
 
   public:
     String state = "not active"; // not active, preparation
     
-    int BEEP_CENTRAL_PIN;
-
-
-
     void Init(
-      int BEEP_CENTRAL_PIN_IN,
-      int DIODE_RED_IN,
-      int DIODE_YELLOW_IN,
-      int DIODE_GREEN_IN
+      Beep BEEP_CENTRAL_PIN_IN,
+      Diode DIODE_RED_IN,
+      Diode DIODE_YELLOW_IN,
+      Diode DIODE_GREEN_IN
     ){
-      BEEP_CENTRAL_PIN = BEEP_CENTRAL_PIN_IN;
-      int DIODE_RED = DIODE_RED_IN;
-      int DIODE_YELLOW = DIODE_YELLOW_IN;
-      int DIODE_GREEN = DIODE_GREEN_IN;
+      beep = BEEP_CENTRAL_PIN_IN;
+      DIODE_RED = DIODE_RED_IN;
+      DIODE_YELLOW = DIODE_YELLOW_IN;
+      DIODE_GREEN = DIODE_GREEN_IN;
       SetFinished();
     }
 
@@ -242,7 +248,7 @@ class Game {
 
     void StartGame(){
       
-      // analogWrite(BEEP_CENTRAL_PIN, preparationBeepPitch);
+      // analogWrite(BEEP_CENTRAL, preparationBeepPitch);
       SetPreparation();
     }
 
@@ -255,15 +261,15 @@ class Game {
       }
       // long dTime = currentTime - beepingStartTime;
       Serial.println(dTime);
-      if (dTime > beepDuration + gapBetweenBeeps){
+      if (dTime > currentBeepDuration + currentBeepDuration){
         currentBeepCount++;
 
         beepingStartTime = currentTime;
-        if (enableBeep) Beep(preparationBeepPitch);
+        if (enableBeep) Beep(preparationBeepPitch+currentBeepCount);
         Serial.println("----BEEP----");
         
         
-      } else if (dTime > beepDuration){
+      } else if (dTime > currentBeepDuration){
         Serial.println("----STOP---");
         if (enableBeep) Beep(0);
       }
@@ -278,9 +284,11 @@ class Game {
       ChangeState("preparation");
 
       currentBeepCount=0;
-      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
-      Serial.println(!digitalRead(DIODE_RED));
+      DIODE_RED.TurnOn();
       
+      currentBeepDuration = defaultBeepDuration + random(-beepDurationDistribution, beepDurationDistribution);
+      beepsBeforeStart = random(1, maxBeepCount+1);
+
     }
 
     bool IsPreparation(){
@@ -292,8 +300,7 @@ class Game {
 
       if (enableBeep) Beep(readyStatePitch);
 
-      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
-      Serial.println(digitalRead(DIODE_RED));
+      DIODE_RED.TurnOn();
       
     }
 
@@ -303,7 +310,7 @@ class Game {
 
     void SetFinished(){
       Beep(0);
-      digitalWrite(DIODE_RED, !digitalRead(DIODE_RED));
+      DIODE_RED.TurnOff();
       state = "finished";
     }
 
@@ -317,7 +324,7 @@ class Game {
     }
 
     void Beep(int pitch=0){
-      analogWrite(BEEP_CENTRAL_PIN, pitch);
+      beep.Set(pitch);
     }
 
 };
@@ -332,17 +339,23 @@ int PLAYER2_BTN_PIN = 11;
 int MOTOR1_PIN = 3;
 int MOTOR2_PIN = 4;
 
-int BEEP1_PIN = 9;
+int CENTRAL_BEEP_PIN = 9;
 
-int DIODE_RED = 7;
-int DIODE_YELLOW = 6;
-int DIODE_GREEN = 5;
+int DIODE_RED_PIN = 7;
+int DIODE_YELLOW_PIN = 6;
+int DIODE_GREEN_PIN = 5;
 
 Button gameBtn;
 Motor motor1;
 
 Button player1Btn;
 Button player2Btn;
+
+Diode DIODE_RED;
+Diode DIODE_YELLOW;
+Diode DIODE_GREEN;
+
+Beep CENTRAL_BEEP;
 
 Game game;
 
@@ -404,21 +417,7 @@ void OnEnterPlayer2(){
 ///           SETUP
 ///          ↓↓↓↓↓↓↓
 void setup() {
-  test();
-
   Serial.begin(9600);
-  // pinMode(MOTOR1_PIN, 1); // motor 1
-  // pinMode(BEEP1_PIN, OUTPUT);
-
-  //DIODES
-  // pinMode(DIODE_RED, OUTPUT);
-  // pinMode(DIODE_YELLOW, OUTPUT);
-  // pinMode(DIODE_GREEN, OUTPUT);
-
-  //BUTTONS
-  // pinMode(START_GAME_BTN_PIN, INPUT_PULLUP); // button 1
-  // pinMode(PLAYER1_BTN_PIN, INPUT_PULLUP); // button 1
-  // pinMode(PLAYER2_BTN_PIN, INPUT_PULLUP); // button 1
 
   //INITS
   gameBtn.Init(
@@ -447,8 +446,14 @@ void setup() {
 
   motor1.Init(MOTOR1_PIN);
 
+  DIODE_RED.Init(DIODE_RED_PIN);
+  DIODE_YELLOW.Init(DIODE_YELLOW_PIN);
+  DIODE_GREEN.Init(DIODE_GREEN_PIN);
+
+  CENTRAL_BEEP.Init(CENTRAL_BEEP_PIN);
+
   game.Init(
-    BEEP1_PIN,
+    CENTRAL_BEEP,
     DIODE_RED,
     DIODE_YELLOW,
     DIODE_GREEN
@@ -470,9 +475,11 @@ void loop() {
   motor1.Update();
   game.Update();  
 
-  digitalWrite(DIODE_RED, HIGH);
-  Serial.println(digitalRead(DIODE_RED));
+  // digitalWrite(DIODE_RED, HIGH);
+  // Serial.println(digitalRead(DIODE_RED));
   // Serial.println(DIODE_RED);
+
+  // Serial.println();
 }
 ///          ↑↑↑↑↑↑↑↑
 ///          MAIN LOOP
