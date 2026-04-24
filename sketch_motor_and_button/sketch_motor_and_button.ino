@@ -212,7 +212,7 @@ class Game {
 
     int readyStatePitch = 70;
 
-    bool enableBeep = true; // ENABLE BEEP
+    bool enableBeep = false; // ENABLE BEEP
 
     Diode DIODE_RED;
     Diode DIODE_YELLOW;
@@ -386,15 +386,15 @@ void Empty(){
 }
 
 void OnEnterGameButton(){
-  // // motor1.SetSpeed(255);
-  // if (motor1.isActive()){
-  //   motor1.EndMovement();
-  //   // analogWrite(BEEP1_PIN, 0);
-  //   return;
-  // }
+  // motor1.SetSpeed(255);
+  if (motor1.isActive()){
+    motor1.EndMovement();
+    // analogWrite(BEEP1_PIN, 0);
+    return;
+  }
 
-  // // analogWrite(BEEP1_PIN, 1);
-  // motor1.StartMovement(255, 1000);
+  // analogWrite(BEEP1_PIN, 1);
+  motor1.StartMovement(255, 1000);
 
   if (!game.IsFinished()) return;
 
